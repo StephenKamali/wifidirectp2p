@@ -21,6 +21,8 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 /**
  * An activity that uses WiFi Direct APIs to discover and connect with available
@@ -38,12 +40,20 @@ public class WiFiDirectActivity extends Activity implements ChannelListener, Dev
     private final IntentFilter intentFilter = new IntentFilter();
     private Channel channel;
     private BroadcastReceiver receiver = null;
+
+    private TextView thisDeviceDebug;
+    private Button connectToNetworkButton;
+
     /**
      * @param isWifiP2pEnabled the isWifiP2pEnabled to set
      */
     public void setIsWifiP2pEnabled(boolean isWifiP2pEnabled) {
         this.isWifiP2pEnabled = isWifiP2pEnabled;
+        if (this.isWifiP2pEnabled) {
+            becomeGroupOwner();
+        }
     }
+
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions,
                                            int[] grantResults) {
@@ -60,6 +70,18 @@ public class WiFiDirectActivity extends Activity implements ChannelListener, Dev
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_wifi_direct);
+
+        thisDeviceDebug = (TextView) findViewById(R.id.this_device_debug);
+        thisDeviceDebug.setText("Disconnected");
+
+        connectToNetworkButton = (Button) findViewById(R.id.connect_to_network);
+        connectToNetworkButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                initiatePeerDiscovery();
+            }
+        });
+
         // add necessary intent values to be matched.
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
@@ -153,6 +175,7 @@ public class WiFiDirectActivity extends Activity implements ChannelListener, Dev
                 return super.onOptionsItemSelected(item);
         }
     }
+
     @Override
     public void showDetails(WifiP2pDevice device) {
         DeviceDetailFragment fragment = (DeviceDetailFragment) getFragmentManager()
@@ -173,6 +196,46 @@ public class WiFiDirectActivity extends Activity implements ChannelListener, Dev
             }
         });
     }
+
+    public void becomeGroupOwner() {
+        manager.createGroup(channel, new ActionListener() {
+            @Override
+            public void onSuccess() {
+                // WiFiDirectBroadcastReceiver will notify us. Ignore for now.
+                thisDeviceDebug.setText("Connected as group owner");
+            }
+            @Override
+            public void onFailure(int reason) {
+                Toast.makeText(WiFiDirectActivity.this, "Connect failed. Retry.",
+                        Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+
+    private void initiatePeerDiscovery() {
+        if (!isWifiP2pEnabled) {
+            Toast.makeText(WiFiDirectActivity.this, R.string.p2p_off_warning,
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+        final DeviceListFragment fragment = (DeviceListFragment) getFragmentManager()
+                .findFragmentById(R.id.frag_list);
+        fragment.onInitiateDiscovery();
+        manager.discoverPeers(channel, new WifiP2pManager.ActionListener() {
+            @Override
+            public void onSuccess() {
+                Toast.makeText(WiFiDirectActivity.this, "Discovery Initiated",
+                        Toast.LENGTH_SHORT).show();
+            }
+            @Override
+            public void onFailure(int reasonCode) {
+                Toast.makeText(WiFiDirectActivity.this, "Discovery Failed : " + reasonCode,
+                        Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
     @Override
     public void disconnect() {
         final DeviceDetailFragment fragment = (DeviceDetailFragment) getFragmentManager()

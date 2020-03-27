@@ -9,6 +9,19 @@
         android:id="@+id/linearLayout1"
         android:layout_height="match_parent"
         android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/this_device_debug"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="TextView" />
+
+        <Button
+            android:id="@+id/connect_to_network"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="CONNECT TO HOPSCOTCH" />
+
         <fragment
             class="cs3220.project.wifidirectp2p.DeviceListFragment"
             android:id="@+id/frag_list"
