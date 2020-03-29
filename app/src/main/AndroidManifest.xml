@@ -3,7 +3,6 @@
     package="cs3220.project.wifidirectp2p">
 
     <!-- runtime permission check API is on Android 6.0 or higher -->
-    <uses-sdk android:minSdkVersion="23" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />

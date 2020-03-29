@@ -10,11 +10,20 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
+        <fragment
+            android:id="@+id/frag_list"
+            class="cs3220.project.wifidirectp2p.DeviceListFragment"
+            android:layout_width="match_parent"
+            android:layout_height="300dp">
+            <!-- Preview: layout=@layout/row_devices -->
+        </fragment>
+
         <TextView
             android:id="@+id/this_device_debug"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="TextView" />
+            android:text="TextView"
+            android:textSize="18sp" />
 
         <Button
             android:id="@+id/connect_to_network"
@@ -22,13 +31,13 @@
             android:layout_height="wrap_content"
             android:text="CONNECT TO HOPSCOTCH" />
 
-        <fragment
-            class="cs3220.project.wifidirectp2p.DeviceListFragment"
-            android:id="@+id/frag_list"
+        <Button
+            android:id="@+id/broadcast_test_button"
             android:layout_width="match_parent"
-            android:layout_height="@dimen/phone_list_height">
-            <!-- Preview: layout=@layout/row_devices -->
-        </fragment>
+            android:layout_height="wrap_content"
+            android:text="BROADCAST TEST"
+            android:visibility="gone" />
+
         <fragment
             class="cs3220.project.wifidirectp2p.DeviceDetailFragment"
             android:id="@+id/frag_detail"
