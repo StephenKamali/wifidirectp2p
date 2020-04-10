@@ -256,28 +256,6 @@ public class WiFiDirectActivity extends Activity implements ChannelListener, Dev
                     Log.e(TAG, "channel or manager is null");
                 }
                 return true;
-            case R.id.atn_direct_discover:
-                if (!isWifiP2pEnabled) {
-                    Toast.makeText(WiFiDirectActivity.this, R.string.p2p_off_warning,
-                            Toast.LENGTH_SHORT).show();
-                    return true;
-                }
-                final DeviceListFragment fragment = (DeviceListFragment) getFragmentManager()
-                        .findFragmentById(R.id.frag_list);
-                fragment.onInitiateDiscovery();
-                manager.discoverPeers(channel, new WifiP2pManager.ActionListener() {
-                    @Override
-                    public void onSuccess() {
-                        Toast.makeText(WiFiDirectActivity.this, "Discovery Initiated",
-                                Toast.LENGTH_SHORT).show();
-                    }
-                    @Override
-                    public void onFailure(int reasonCode) {
-                        Toast.makeText(WiFiDirectActivity.this, "Discovery Failed : " + reasonCode,
-                                Toast.LENGTH_SHORT).show();
-                    }
-                });
-                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }

@@ -148,16 +148,18 @@ public class DeviceListFragment extends ListFragment implements PeerListListener
      *
      */
     public void onInitiateDiscovery() {
-        if (progressDialog != null && progressDialog.isShowing()) {
+        /*if (progressDialog != null && progressDialog.isShowing()) {
             progressDialog.dismiss();
         }
-        progressDialog = ProgressDialog.show(getActivity(), "Press back to cancel", "finding peers", true,
+        progressDialog = ProgressDialog.show(getActivity(), "Press back to cancel", "finding initial peers", true,
                 true, new DialogInterface.OnCancelListener() {
                     @Override
                     public void onCancel(DialogInterface dialog) {
 
                     }
                 });
+
+         */
     }
 
     public List<WifiP2pDevice> getPeers() {

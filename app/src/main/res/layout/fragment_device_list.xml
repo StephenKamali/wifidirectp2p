@@ -5,11 +5,13 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:paddingTop="3dp">
+
     <TextView
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
-        android:text="@string/label_me" />
+        android:text="@string/label_me"
+        android:textSize="18sp" />
     <View
         android:layout_width="fill_parent"
         android:layout_height="1dp"
@@ -17,7 +19,6 @@
         android:background="@android:color/holo_blue_light" />
     <!-- Self information -->
     <LinearLayout
-        xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="fill_parent"
         android:layout_height="?android:attr/listPreferredItemHeight"
         android:background="?android:attr/activatedBackgroundIndicator"
@@ -33,26 +34,32 @@
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="fill_parent">
+
             <TextView
                 android:id="@+id/my_name"
                 android:layout_width="fill_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1"
-                android:gravity="center_vertical" />
+                android:gravity="center_vertical"
+                android:textSize="16sp" />
+
             <TextView
                 android:id="@+id/my_status"
                 android:layout_width="fill_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1"
+                android:ellipsize="marquee"
                 android:singleLine="true"
-                android:ellipsize="marquee" />
+                android:textSize="16sp" />
         </LinearLayout>
     </LinearLayout>
+
     <TextView
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
-        android:text="@string/label_peers" />
+        android:text="@string/label_peers"
+        android:textSize="18sp" />
     <View
         android:layout_width="fill_parent"
         android:layout_height="1dp"
@@ -65,10 +72,12 @@
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:drawSelectorOnTop="false" />
+
     <TextView
         android:id="@id/android:empty"
         android:layout_width="match_parent"
-        android:layout_gravity="center"
         android:layout_height="match_parent"
-        android:text="@string/empty_message" />
+        android:layout_gravity="center"
+        android:text="@string/empty_message"
+        android:textSize="16sp" />
 </LinearLayout>
