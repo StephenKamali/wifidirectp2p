@@ -41,6 +41,7 @@ public class WiFiDirectBroadcastReceiver extends BroadcastReceiver {
             int state = intent.getIntExtra(WifiP2pManager.EXTRA_WIFI_STATE, -1);
             if (state == WifiP2pManager.WIFI_P2P_STATE_ENABLED) {
                 // Wifi Direct mode is enabled
+                Log.d("HSCOTCH", "WiFi P2P is enabled");
                 activity.setIsWifiP2pEnabled(true);
             } else {
                 activity.setIsWifiP2pEnabled(false);
@@ -56,6 +57,7 @@ public class WiFiDirectBroadcastReceiver extends BroadcastReceiver {
                         .findFragmentById(R.id.frag_list));
             }
             Log.d(WiFiDirectActivity.TAG, "P2P peers changed");
+            //activity.handleBroadcast();
         } else if (WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION.equals(action)) {
             if (manager == null) {
                 return;

@@ -2,11 +2,13 @@ package cs3220.project.wifidirectp2p;
 
 import android.Manifest;
 import android.app.Activity;
+import android.bluetooth.BluetoothClass;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.net.wifi.WpsInfo;
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pManager;
@@ -15,13 +17,18 @@ import android.net.wifi.p2p.WifiP2pManager.Channel;
 import android.net.wifi.p2p.WifiP2pManager.ChannelListener;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
+
+import java.util.ArrayList;
+
 /**
  * An activity that uses WiFi Direct APIs to discover and connect with available
  * devices. WiFi Direct APIs are asynchronous and rely on callback mechanism
@@ -38,6 +45,14 @@ public class WiFiDirectActivity extends Activity implements ChannelListener, Dev
     private final IntentFilter intentFilter = new IntentFilter();
     private Channel channel;
     private BroadcastReceiver receiver = null;
+
+    private ArrayList<WifiP2pDevice> unbroadcastedPeers;
+    private boolean broadcastPeers;
+    private boolean waitingForPeers;
+    private Button connectToNetworkButton;
+    private Button refreshPeersButton;
+    private Button broadcastButton;
+
     /**
      * @param isWifiP2pEnabled the isWifiP2pEnabled to set
      */
@@ -75,6 +90,48 @@ public class WiFiDirectActivity extends Activity implements ChannelListener, Dev
             // After this point you wait for callback in
             // onRequestPermissionsResult(int, String[], int[]) overridden method
         }
+
+        unbroadcastedPeers = new ArrayList<WifiP2pDevice>();
+        broadcastPeers = false;
+        waitingForPeers = false;
+
+        connectToNetworkButton = (Button) findViewById(R.id.connect_to_network_button);
+        connectToNetworkButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                connectToNetworkButton.setVisibility(View.GONE);
+                refreshPeersButton.setVisibility(View.VISIBLE);
+                broadcastButton.setVisibility(View.VISIBLE);
+
+                //Disconnect from any previous groups
+                if (manager != null) {
+                    final DeviceListFragment fragment = (DeviceListFragment) getFragmentManager()
+                            .findFragmentById(R.id.frag_list);
+                    if (fragment.getDevice() == null
+                            || fragment.getDevice().status == WifiP2pDevice.CONNECTED) {
+                        disconnect();
+                    }
+                }
+
+                becomeGroupOwner();
+            }
+        });
+
+        refreshPeersButton = (Button) findViewById(R.id.refresh_peers_button);
+        refreshPeersButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                initiatePeerDiscovery();
+            }
+        });
+
+        broadcastButton = (Button) findViewById(R.id.broadcast_button);
+        broadcastButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                broadcastToPeers();
+            }
+        });
     }
     /** register the BroadcastReceiver with the intent values to be matched */
     @Override
@@ -104,6 +161,78 @@ public class WiFiDirectActivity extends Activity implements ChannelListener, Dev
             fragmentDetails.resetViews();
         }
     }
+
+    public void handleBroadcast() {
+        //if (!broadcastPeers || !waitingForPeers)
+        if (!broadcastPeers)
+            return;
+
+        waitingForPeers = false;
+
+        final DeviceListFragment fragment = (DeviceListFragment) getFragmentManager()
+                .findFragmentById(R.id.frag_list);
+
+        Log.d("HSCOTCH", "Unbroadcasted peers contains " + unbroadcastedPeers.toString());
+
+        if (!unbroadcastedPeers.isEmpty()) {
+            final WifiP2pDevice nextPeer = unbroadcastedPeers.remove(0);
+            WifiP2pConfig config = new WifiP2pConfig();
+            config.deviceAddress = nextPeer.deviceAddress;
+            config.wps.setup = WpsInfo.PBC;
+            manager.connect(channel, config, new WifiP2pManager.ActionListener() {
+                @Override
+                public void onSuccess() {
+                    new CountDownTimer(10000, 1000) {
+                        @Override
+                        public void onTick(long l) {
+                            Log.d("HSCOTCH", "Getting new status in " + l);
+                        }
+
+                        @Override
+                        public void onFinish() {
+                            /*int ind = fragment.getPeers().indexOf(nextPeer);
+                            if (ind != -1) {
+                                Log.d("HSCOTCH", "new peer status is " + fragment.getPeers().get(ind).status);
+                                if (fragment.getPeers().get(ind).status != WifiP2pDevice.CONNECTED) {
+                                    cancelDisconnect();
+                                    initiatePeerDiscovery();
+                                }
+                            }
+
+                             */
+                            cancelDisconnect();
+                            waitingForPeers = true;
+                            initiatePeerDiscovery();
+
+                            // Give peer discovery a chance to discover as much as it can
+                            new CountDownTimer(5000, 1000) {
+
+                                @Override
+                                public void onTick(long millisUntilFinished) {
+                                }
+
+                                @Override
+                                public void onFinish() {
+                                    handleBroadcast();
+                                }
+                            }.start();
+                        }
+                    }.start();
+                }
+
+                @Override
+                public void onFailure(int reason) {
+                    Log.d("HSCOTCH", "Unable to start connection to " + nextPeer.deviceName + "(error " + reason + ")");
+                }
+            });
+        } else {
+            Log.d("HSCOTCH", "No more peers to broadcast to, becoming group owner");
+            broadcastPeers = false;
+            cancelDisconnect();
+            becomeGroupOwner();
+        }
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
@@ -153,6 +282,80 @@ public class WiFiDirectActivity extends Activity implements ChannelListener, Dev
                 return super.onOptionsItemSelected(item);
         }
     }
+
+    private void becomeGroupOwner() {
+        Log.d("HSCOTCH", "Becoming group owner");
+        manager.createGroup(channel, new ActionListener() {
+            @Override
+            public void onSuccess() {
+                Log.d("HSCOTCH", "Connected as group owner");
+            }
+
+            @Override
+            public void onFailure(int reason) {
+                Log.d("HSCOTCH", "Failed to become group owner");
+                Toast.makeText(WiFiDirectActivity.this, "Failed to become group owner.", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void initiatePeerDiscovery() {
+        if (!isWifiP2pEnabled) {
+            Toast.makeText(WiFiDirectActivity.this, R.string.p2p_off_warning,
+                    Toast.LENGTH_SHORT).show();
+        }
+        //final DeviceListFragment fragment = (DeviceListFragment) getFragmentManager()
+        //        .findFragmentById(R.id.frag_list);
+        //fragment.onInitiateDiscovery();
+        manager.discoverPeers(channel, new WifiP2pManager.ActionListener() {
+            @Override
+            public void onSuccess() {
+                Toast.makeText(WiFiDirectActivity.this, "Discovery Initiated",
+                        Toast.LENGTH_SHORT).show();
+            }
+            @Override
+            public void onFailure(int reasonCode) {
+                Toast.makeText(WiFiDirectActivity.this, "Discovery Failed : " + reasonCode,
+                        Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void broadcastToPeers() {
+        Log.d("HSCOTCH", "Beginning broadcast to peers");
+
+        if (broadcastPeers) {
+            handleBroadcast();
+        } else {
+
+            final DeviceListFragment fragment = (DeviceListFragment) getFragmentManager()
+                    .findFragmentById(R.id.frag_list);
+            unbroadcastedPeers.addAll(fragment.getPeers());
+
+
+            Log.d("HSCOTCH", "Leaving current group to broadcast");
+            //cancelDisconnect();
+            disconnect();
+
+            broadcastPeers = true;
+            waitingForPeers = true;
+            initiatePeerDiscovery();
+
+            // Give peer discovery a chance to discover as much as it can
+            new CountDownTimer(5000, 1000) {
+
+                @Override
+                public void onTick(long millisUntilFinished) {
+                }
+
+                @Override
+                public void onFinish() {
+                    handleBroadcast();
+                }
+            }.start();
+        }
+    }
+
     @Override
     public void showDetails(WifiP2pDevice device) {
         DeviceDetailFragment fragment = (DeviceDetailFragment) getFragmentManager()

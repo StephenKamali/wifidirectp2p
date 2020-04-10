@@ -9,13 +9,35 @@
         android:id="@+id/linearLayout1"
         android:layout_height="match_parent"
         android:orientation="vertical">
+
         <fragment
-            class="cs3220.project.wifidirectp2p.DeviceListFragment"
             android:id="@+id/frag_list"
+            class="cs3220.project.wifidirectp2p.DeviceListFragment"
             android:layout_width="match_parent"
-            android:layout_height="@dimen/phone_list_height">
+            android:layout_height="250dp">
             <!-- Preview: layout=@layout/row_devices -->
         </fragment>
+
+        <Button
+            android:id="@+id/connect_to_network_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="CONNECT TO HOPSCOTCH" />
+
+        <Button
+            android:id="@+id/refresh_peers_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="MANUAL REFRESH PEERS"
+            android:visibility="gone" />
+
+        <Button
+            android:id="@+id/broadcast_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="BROADCAST"
+            android:visibility="gone" />
+
         <fragment
             class="cs3220.project.wifidirectp2p.DeviceDetailFragment"
             android:id="@+id/frag_detail"

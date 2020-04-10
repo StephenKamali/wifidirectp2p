@@ -26,9 +26,9 @@ import java.util.List;
 /**
  * A simple {@link Fragment} subclass.
  * Activities that contain this fragment must implement the
- * {@link DeviceListFragment.OnFragmentInteractionListener} interface
+ * {DeviceListFragment.OnFragmentInteractionListener} interface
  * to handle interaction events.
- * Use the {@link DeviceListFragment#newInstance} factory method to
+ * Use the {DeviceListFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
 public class DeviceListFragment extends ListFragment implements PeerListListener {
@@ -138,6 +138,7 @@ public class DeviceListFragment extends ListFragment implements PeerListListener
             Log.d(WiFiDirectActivity.TAG, "No devices found");
             return;
         }
+        //((WiFiDirectActivity)(getActivity())).handleBroadcast();
     }
     public void clearPeers() {
         peers.clear();
@@ -157,6 +158,10 @@ public class DeviceListFragment extends ListFragment implements PeerListListener
 
                     }
                 });
+    }
+
+    public List<WifiP2pDevice> getPeers() {
+        return peers;
     }
     /**
      * An interface-callback for the activity to listen to fragment interaction

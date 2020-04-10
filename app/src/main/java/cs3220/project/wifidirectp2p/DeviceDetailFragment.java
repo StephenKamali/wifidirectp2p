@@ -27,6 +27,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Arrays;
+
 /**
  * A fragment that manages a particular peer and allows interaction with device
  * i.e. setting up network connection and transferring data.
@@ -86,6 +88,22 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
                 });
         return mContentView;
     }
+
+    private void sendPacket(String packet) {
+        // We have a packet to send. Transfer it to group owner i.e peer using
+        // PacketTransferService.
+        TextView statusText = (TextView) mContentView.findViewById(R.id.status_text);
+        statusText.setText("Sending: " + packet.length() + " bytes");
+        //Log.d(WiFiDirectActivity.TAG, "Intent----------- " + uri);
+        Intent serviceIntent = new Intent(getActivity(), PacketTransferService.class);
+        serviceIntent.setAction(PacketTransferService.ACTION_SEND_PACKET);
+        serviceIntent.putExtra(PacketTransferService.EXTRAS_PACKET_DATA, packet);
+        serviceIntent.putExtra(PacketTransferService.EXTRAS_GROUP_OWNER_ADDRESS,
+                info.groupOwnerAddress.getHostAddress());
+        serviceIntent.putExtra(PacketTransferService.EXTRAS_GROUP_OWNER_PORT, 8988);
+        getActivity().startService(serviceIntent);
+    }
+
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         // User has picked an image. Transfer it to group owner i.e peer using
@@ -121,14 +139,44 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
         // server. The file server is single threaded, single connection server
         // socket.
         if (info.groupFormed && info.isGroupOwner) {
-            new FileServerAsyncTask(getActivity(), mContentView.findViewById(R.id.status_text))
-                    .execute();
+            //new FileServerAsyncTask(getActivity(), mContentView.findViewById(R.id.status_text))
+             //       .execute();
+            new PacketAsyncTask(getActivity(), mContentView.findViewById(R.id.status_text))
+                   .execute();
+            /*Thread thread = new Thread(new Runnable(){
+                @Override
+                public void run() {
+                    try {
+                        try {
+                            ServerSocket serverSocket = new ServerSocket(8988);
+                            Log.d(WiFiDirectActivity.TAG, "Server: Socket opened");
+                            Socket client = serverSocket.accept();
+                            Log.d(WiFiDirectActivity.TAG, "Server: connection done");
+                            InputStream inputstream = client.getInputStream();
+
+                            byte[] packet = receivePacket(inputstream);
+                            Log.d("HSCOTCH", "Packet contents: " + Arrays.toString(packet));
+
+                            serverSocket.close();
+                        } catch (IOException e) {
+                            Log.e(WiFiDirectActivity.TAG, e.getMessage());
+                        }
+                    } catch (Exception e) {
+                        Log.e("HSCOTCH", e.getMessage());
+                    }
+                }
+            });
+            thread.start();
+             */
         } else if (info.groupFormed) {
             // The other device acts as the client. In this case, we enable the
             // get file button.
-            mContentView.findViewById(R.id.btn_start_client).setVisibility(View.VISIBLE);
-            ((TextView) mContentView.findViewById(R.id.status_text)).setText(getResources()
-                    .getString(R.string.client_text));
+
+            sendPacket("HOWDY WORLD. THIS IS A TEST PACKET.");
+
+            //mContentView.findViewById(R.id.btn_start_client).setVisibility(View.VISIBLE);
+            //((TextView) mContentView.findViewById(R.id.status_text)).setText(getResources()
+            //        .getString(R.string.client_text));
         }
         // hide the connect button
         mContentView.findViewById(R.id.btn_connect).setVisibility(View.GONE);
@@ -162,6 +210,7 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
         mContentView.findViewById(R.id.btn_start_client).setVisibility(View.GONE);
         this.getView().setVisibility(View.GONE);
     }
+
     /**
      * A simple server socket that accepts connection and writes some data on
      * the stream.
@@ -230,6 +279,61 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
             statusText.setText("Opening a server socket");
         }
     }
+
+    /**
+     * A simple server socket that accepts connection and writes some data on
+     * the stream.
+     */
+    public static class PacketAsyncTask extends AsyncTask<Void, Void, String> {
+        private Context context;
+        private TextView statusText;
+        /**
+         * @param context
+         * @param statusText
+         */
+        public PacketAsyncTask(Context context, View statusText) {
+            this.context = context;
+            this.statusText = (TextView) statusText;
+        }
+        @Override
+        protected String doInBackground(Void... params) {
+            try {
+                ServerSocket serverSocket = new ServerSocket(8988);
+                Log.d(WiFiDirectActivity.TAG, "Server: Socket opened");
+                Socket client = serverSocket.accept();
+                Log.d(WiFiDirectActivity.TAG, "Server: connection done");
+                InputStream inputstream = client.getInputStream();
+
+                byte[] packet = receivePacket(inputstream);
+                Log.d("HSCOTCH", "Packet contents: " + new String(packet));
+
+                serverSocket.close();
+                return "finished";
+            } catch (IOException e) {
+                Log.e(WiFiDirectActivity.TAG, e.getMessage());
+                return null;
+            }
+        }
+        /*
+         * (non-Javadoc)
+         * @see android.os.AsyncTask#onPostExecute(java.lang.Object)
+         */
+        @Override
+        protected void onPostExecute(String result) {
+            if (result != null) {
+                statusText.setText("Packet copied - " + result);
+            }
+        }
+        /*
+         * (non-Javadoc)
+         * @see android.os.AsyncTask#onPreExecute()
+         */
+        @Override
+        protected void onPreExecute() {
+            statusText.setText("Opening a server socket");
+        }
+    }
+
     public static boolean copyFile(InputStream inputStream, OutputStream out) {
         byte buf[] = new byte[1024];
         int len;
@@ -244,5 +348,19 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
             return false;
         }
         return true;
+    }
+
+    // This is a really simple way to receive the info, and store it in a small buffer
+    public static byte[] receivePacket(InputStream inputStream) {
+        byte buf[] = new byte[1024];
+        int len;
+        try {
+            len = inputStream.read(buf);
+            Log.d("HSCOTCH", "Received " + len + " bytes");
+            inputStream.close();
+        } catch (IOException e) {
+            Log.d(WiFiDirectActivity.TAG, e.toString());
+        }
+        return buf;
     }
 }
