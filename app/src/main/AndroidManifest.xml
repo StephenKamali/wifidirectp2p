@@ -38,6 +38,9 @@
         </provider>
         <!-- Used for transferring files  after a successful connection -->
         <service android:enabled="true" android:name=".FileTransferService" />
+        <meta-data
+            android:name="preloaded_fonts"
+            android:resource="@array/preloaded_fonts" />
     </application>
 
 </manifest>
