@@ -2,13 +2,14 @@ package cs3220.project.wifidirectp2p;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 
 public class MainSearchActivity extends AppCompatActivity {
-
+    public static final String SEARCH_STRING = "cs3220.project.wifidirectp2p.MESSAGE";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -16,8 +17,11 @@ public class MainSearchActivity extends AppCompatActivity {
     }
 
     public void search(View view) {
-        EditText fileName = (EditText) findViewById(R.id.fileName);
-        Log.i(null, "Searching for file: " + fileName.getText().toString());
+        EditText fileName = findViewById(R.id.fileName);
+        Log.i("MainSearchActivity", "Search Clicked");
+        Intent intent = new Intent(this, FileDownloadActivity.class);
+        intent.putExtra(SEARCH_STRING, fileName.getText().toString());
+        startActivity(intent);
     }
 
     public void sendMessage(View view) {
@@ -25,6 +29,8 @@ public class MainSearchActivity extends AppCompatActivity {
     }
 
     public void uploadFile(View view) {
-        Log.i(null, "Uploading File");
+        Log.i("MainSearchActivity", "Upload File Clicked");
+        Intent intent = new Intent(this, FileUploadsActivity.class);
+        startActivity(intent);
     }
 }
