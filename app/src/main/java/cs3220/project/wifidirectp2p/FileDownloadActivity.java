@@ -1,6 +1,8 @@
 package cs3220.project.wifidirectp2p;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -18,6 +20,7 @@ public class FileDownloadActivity extends AppCompatActivity {
         String searchString = intent.getStringExtra(MainSearchActivity.SEARCH_STRING);
         EditText searchInput = findViewById(R.id.searchText);
         searchInput.setText(searchString);
+        search(searchString);
     }
 
     public void onSearchClick(View view) {
@@ -32,7 +35,6 @@ public class FileDownloadActivity extends AppCompatActivity {
     }
 
     private void search(String searchString) {
-        //TODO
         Log.i("FileDownloadActivity", "Searching for " + searchString);
     }
 }

@@ -7,61 +7,67 @@
     android:background="#99EAE2"
     tools:context=".FileDownloadActivity">
 
-    <Button
-        android:id="@+id/searchButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:fontFamily="@font/baloo"
-        android:onClick="onBackClick"
-        android:text="Back"
-        android:textSize="24sp"
+    <LinearLayout
+        android:id="@+id/linearLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.945"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/searchButton2"
-        app:layout_constraintVertical_bias="0.925" />
+        app:layout_constraintTop_toTopOf="parent">
 
-    <Button
-        android:id="@+id/searchButton2"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="16dp"
-        android:fontFamily="@font/baloo"
-        android:onClick="onSearchClick"
-        android:text="Search"
-        android:textSize="24sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.277" />
+        <ImageView
+            android:id="@+id/logo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="logo"
+            app:srcCompat="@drawable/logo" />
 
-    <ImageView
-        android:id="@+id/imageView2"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.0"
-        app:srcCompat="@drawable/logo" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
 
-    <EditText
-        android:id="@+id/searchText"
-        android:layout_width="257dp"
-        android:layout_height="wrap_content"
-        android:ems="10"
-        android:fontFamily="@font/baloo"
-        android:inputType="text"
-        android:text="File Name"
-        android:textColor="#000000"
-        android:textSize="24sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/searchButton"
-        app:layout_constraintHorizontal_bias="0.432"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/imageView2"
-        app:layout_constraintVertical_bias="0.032" />
+            <EditText
+                android:id="@+id/searchText"
+                android:layout_width="257dp"
+                android:layout_height="wrap_content"
+                android:ems="10"
+                android:fontFamily="@font/baloo"
+                android:inputType="text"
+                android:text="File Name"
+                android:textColor="#000000"
+                android:textSize="24sp" />
+
+            <Button
+                android:id="@+id/searchButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="16dp"
+                android:fontFamily="@font/baloo"
+                android:onClick="onSearchClick"
+                android:text="Search"
+                android:textSize="24sp" />
+
+        </LinearLayout>
+
+        <fragment
+            android:id="@+id/file_download_fragment"
+            android:name="cs3220.project.wifidirectp2p.FileDownloadFragment"
+            android:layout_width="match_parent"
+            android:layout_height="251dp"
+            android:layout_weight="1" />
+
+        <Button
+            android:id="@+id/backButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/baloo"
+            android:onClick="onBackClick"
+            android:text="Back"
+            android:textSize="24sp" />
+
+    </LinearLayout>
+
 </androidx.constraintlayout.widget.ConstraintLayout>
