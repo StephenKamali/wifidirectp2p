@@ -17,6 +17,7 @@
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:theme="@android:style/Theme.Holo">
+        <activity android:name=".MainSearchActivity" android:theme="@style/Theme.AppCompat.Light"></activity>
         <activity
             android:name=".WiFiDirectActivity"
             android:label="@string/app_name" android:launchMode="singleTask">
