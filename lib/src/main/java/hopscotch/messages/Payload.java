@@ -1,6 +1,8 @@
 package hopscotch.messages;
 
-public class Payload {
+import java.io.Serializable;
+
+public class Payload implements Serializable {
     public PayloadEncryption encryption;
     public PayloadType type;
     public byte[] content;

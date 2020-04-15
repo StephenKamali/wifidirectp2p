@@ -7,4 +7,5 @@ public enum PayloadType {
     DOWNLOAD_REQUEST,
     DOWNLOAD_RESPONSE,
     DOWNLOAD_CHUNK,
+    TEXT_MESSAGE,
 }

@@ -1,9 +1,10 @@
 package hopscotch.messages;
 
+import java.io.Serializable;
 import java.security.PublicKey;
 import java.util.ArrayList;
 
-public class Packet {
+public class Packet implements Serializable {
     private PublicKey sender;
     private PublicKey receiver;
     private ArrayList<Payload> payloads;

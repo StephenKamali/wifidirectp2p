@@ -13,6 +13,7 @@ import java.util.Base64;
 import hopscotch.messages.Packet;
 import hopscotch.messages.PayloadEncryption;
 import hopscotch.messages.PayloadType;
+import hopscotch.messages.Serializer;
 
 public class DataEncryptor {
     public static final int AES_KEY_SIZE = 256;
@@ -49,11 +50,11 @@ public class DataEncryptor {
 
         /*Responder sends RSA encrypted (with requester's public key):
                           [encrypted(matching file metadata), plaintext(responder's public key)]*/
-        KeyPair ResponderKeys = genNewRSAKeySet();
+        KeyPair responderKeys = genNewRSAKeySet();
         String fileMetaData = "CAT MEMES LUL UWU LOOK AT HIS LIL PAW PAW";
         byte[] encryptedMeta = encryptRSAMessage(searchPacket.getSender(),
                 convertStringToBytes(fileMetaData));
-        Packet searchResponsePacket = new Packet(ResponderKeys.getPublic(), searchPacket.getSender());
+        Packet searchResponsePacket = new Packet(responderKeys.getPublic(), searchPacket.getSender());
         searchResponsePacket.appendPayload(PayloadEncryption.RSA_ENCRYPTED, PayloadType.SEARCH_RESPONSE, encryptedMeta);
         //send [encryptedMeta, responderPublic] values off
 
@@ -74,7 +75,7 @@ public class DataEncryptor {
         downloadRequestPacket.appendPayload(PayloadEncryption.AES_ENCRYPTED, PayloadType.DOWNLOAD_REQUEST, encryptAESMessage(sharedKey, convertStringToBytes(responseMetaData)));
         //send [download, encryptedHandshake] values off
 
-        SecretKey negotiatedSharedKey = deserializeSecretKey(decryptRSAMessage(ResponderKeys.getPrivate(), downloadRequestPacket.getPayloads().get(0).content));
+        SecretKey negotiatedSharedKey = deserializeSecretKey(decryptRSAMessage(responderKeys.getPrivate(), downloadRequestPacket.getPayloads().get(0).content));
         String fileContent = "Pretend this is a file. Just like this string," +
                 "a file can be turned into a byte array. Don't worry.";
 
@@ -91,6 +92,18 @@ public class DataEncryptor {
         System.out.println("End-To-End works: " + rebuiltFile.equals(fileContent));
 
         //--------------------------------------------------------
+
+        // For message sending: can either use RSA or AES encryption
+        Packet rsaMessage = new Packet(requesterKeys.getPublic(), responderKeys.getPublic());
+        rsaMessage.appendPayload(PayloadEncryption.RSA_ENCRYPTED, PayloadType.TEXT_MESSAGE, encryptRSAMessage(responderKeys.getPublic(), convertStringToBytes("Hello, world!")));
+
+        Packet aesMessage = new Packet(requesterKeys.getPublic(), responderKeys.getPublic());
+        SecretKey sharedMessageKey = genNewAESKey();
+        aesMessage.appendPayload(PayloadEncryption.RSA_ENCRYPTED, PayloadType.AES_NEGOTIATION, encryptRSAMessage(responderKeys.getPublic(), sharedMessageKey.getEncoded()));
+        aesMessage.appendPayload(PayloadEncryption.AES_ENCRYPTED, PayloadType.TEXT_MESSAGE, encryptRSAMessage(responderKeys.getPublic(), convertStringToBytes("Hello, world!")));
+        // Convert packets to byte streams like so:
+        byte[] toSend = Serializer.serialize(aesMessage);
+        Packet receivedPacket = Serializer.deserialize(toSend);
     }
 
     public static KeyPair genNewRSAKeySet() {
