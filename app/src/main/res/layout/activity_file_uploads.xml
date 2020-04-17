@@ -64,17 +64,12 @@
         app:layout_constraintTop_toBottomOf="@+id/logo"
         app:layout_constraintVertical_bias="0.0" />
 
-    <TextView
-        android:id="@+id/emptyUploads"
-        android:layout_width="223dp"
-        android:layout_height="105dp"
-        android:fontFamily="@font/baloo"
-        android:text="No Files Uploaded Yet"
-        android:textSize="30sp"
+    <ListView
+        android:layout_width="391dp"
+        android:layout_height="375dp"
         app:layout_constraintBottom_toTopOf="@+id/uploadFile"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/logo"
-        app:layout_constraintVertical_bias="0.3" />
+        app:layout_constraintTop_toBottomOf="@+id/uploadsText" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>
