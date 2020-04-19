@@ -15,19 +15,55 @@ public class EncryptionManager {
     // and their key maps to an associated KeyBundle for transactions
     //exclusively with that peer.
     private HashMap<PublicKey, KeyBundle> keyBundles;
+    private PublicKey requestRSAPublicKey;
+    private PrivateKey requestRSAPrivateKey;
 
     public EncryptionManager() {
+        requestRSAPublicKey = null;
         keyBundles = new HashMap<>();
     }
 
-    //WHEN RYAN MAKES THE MESSAGE STUFF, MAKE WRAPPER FUNCTIONS THAT
-    //COMBINE ENCRYPTION ALGORITHMS WITH PACKAGING MESSAGES
-
-    public void destroyBundle(PublicKey peer) {
-        KeyBundle theBundle = keyBundles.get(peer);
-        theBundle.eraseAllInfo();
-        keyBundles.put(peer, null);
+    //Before I've made contact with a peer, use my own public key for our
+    //transaction as the key to the keyBundle.
+    public PublicKey requestSetup() {
+        KeyPair myKeys = DataEncryptor.genNewRSAKeySet();
+        requestRSAPrivateKey = myKeys.getPrivate();
+        requestRSAPublicKey = myKeys.getPublic();
+        return myKeys.getPublic();
     }
+
+    //When the Responder gives me their public key, update our keyBundle. Call
+    //this for every person that responds.
+    public void requestFinishSetup(PublicKey newPeer) {
+        KeyBundle newBundle = new KeyBundle();
+        newBundle.setMyPublicRSAKey(requestRSAPublicKey);
+        newBundle.setMyPrivateRSAKey(requestRSAPrivateKey);
+        newBundle.setTheirPublicRSAKey(newPeer);
+        keyBundles.put(newPeer, newBundle);
+    }
+
+    //Before I respond to someone's request, setup a keyBundle for the exchange.
+    public void responseSetup(PublicKey newPeer) {
+        KeyBundle newBundle = new KeyBundle();
+        newBundle.createRSAKeys();
+        newBundle.setTheirPublicRSAKey(newPeer);
+        keyBundles.put(newPeer, newBundle);
+    }
+
+    //Create an AES key for our transaction and add it to our keyBundle.
+    public SecretKey genAESTransaction(PublicKey peer) {
+        SecretKey newKey =  DataEncryptor.genNewAESKey();
+        setOurSharedAESKey(peer, newKey);
+        return newKey;
+    }
+
+    //Checks to see if I've been previously communicating with a peer for the sake
+    //of a transaction between us.
+    public boolean currentlyTalkingTo(PublicKey peer) {
+        return keyBundles.containsKey(peer);
+    }
+
+    //-------------------------------------------------------------------------------
 
     //GETTERS
     public PrivateKey getMyPrivateRSAKey(PublicKey peer) {
@@ -61,5 +97,11 @@ public class EncryptionManager {
     }
     public void setOurSharedAESIV(PublicKey peer, IvParameterSpec newIV) {
         keyBundles.get(peer).setOurSharedAESIV(newIV);
+    }
+
+    public void destroyKeyBundle(PublicKey peer) {
+        KeyBundle theBundle = keyBundles.get(peer);
+        theBundle.eraseAllInfo();
+        keyBundles.remove(peer);
     }
 }
