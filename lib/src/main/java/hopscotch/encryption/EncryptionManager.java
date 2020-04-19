@@ -11,9 +11,10 @@ peer-to-peer transactions. */
 
 public class EncryptionManager {
 
-    //Each peer has a corresponding Integer ID, and an associated KeyBundle for transactions
+    //Each peer should be identified by their public key,
+    // and their key maps to an associated KeyBundle for transactions
     //exclusively with that peer.
-    private HashMap<Integer, KeyBundle> keyBundles;
+    private HashMap<PublicKey, KeyBundle> keyBundles;
 
     public EncryptionManager() {
         keyBundles = new HashMap<>();
@@ -22,44 +23,43 @@ public class EncryptionManager {
     //WHEN RYAN MAKES THE MESSAGE STUFF, MAKE WRAPPER FUNCTIONS THAT
     //COMBINE ENCRYPTION ALGORITHMS WITH PACKAGING MESSAGES
 
-    public void destroyBundle(Integer peer) {
+    public void destroyBundle(PublicKey peer) {
         KeyBundle theBundle = keyBundles.get(peer);
         theBundle.eraseAllInfo();
         keyBundles.put(peer, null);
     }
 
     //GETTERS
-    public PrivateKey getMyPrivateRSAKey(Integer peer) {
+    public PrivateKey getMyPrivateRSAKey(PublicKey peer) {
         return keyBundles.get(peer).getMyPrivateRSAKey();
     }
-    public PublicKey getMyPublicRSAKey(Integer peer) {
+    public PublicKey getMyPublicRSAKey(PublicKey peer) {
         return keyBundles.get(peer).getMyPublicRSAKey();
     }
-    public PublicKey getTheirPublicRSAKey(Integer peer) {
+    public PublicKey getTheirPublicRSAKey(PublicKey peer) {
         return keyBundles.get(peer).getTheirPublicRSAKey();
     }
-    public SecretKey getOurSharedAESKey(Integer peer) {
+    public SecretKey getOurSharedAESKey(PublicKey peer) {
         return keyBundles.get(peer).getOurSharedAESKey();
     }
-    public IvParameterSpec getOurSharedAESIV(Integer peer) {
+    public IvParameterSpec getOurSharedAESIV(PublicKey peer) {
         return keyBundles.get(peer).getOurSharedAESIV();
     }
 
     //SETTERS
-    public void setMyPrivateRSAKey(Integer peer, PrivateKey newKey) {
+    public void setMyPrivateRSAKey(PublicKey peer, PrivateKey newKey) {
         keyBundles.get(peer).setMyPrivateRSAKey(newKey);
     }
-    public void setMyPublicRSAKey(Integer peer, PublicKey newKey) {
+    public void setMyPublicRSAKey(PublicKey peer, PublicKey newKey) {
         keyBundles.get(peer).setMyPublicRSAKey(newKey);
     }
-    public void setTheirPublicRSAKey(Integer peer, PublicKey newKey) {
+    public void setTheirPublicRSAKey(PublicKey peer, PublicKey newKey) {
         keyBundles.get(peer).setTheirPublicRSAKey(newKey);
     }
-    public void setOurSharedAESKey(Integer peer, SecretKey newKey) {
+    public void setOurSharedAESKey(PublicKey peer, SecretKey newKey) {
         keyBundles.get(peer).setOurSharedAESKey(newKey);
     }
-    public void setOurSharedAESIV(Integer peer, IvParameterSpec newIV) {
+    public void setOurSharedAESIV(PublicKey peer, IvParameterSpec newIV) {
         keyBundles.get(peer).setOurSharedAESIV(newIV);
     }
-
 }
