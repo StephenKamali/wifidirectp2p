@@ -27,6 +27,10 @@ public class Packet implements Serializable {
         this.payloads.add(payload);
     }
 
+    public void appendPayload(Payload payload) {
+        this.payloads.add(payload);
+    }
+
     public void reset() {
         this.payloads.clear();
     }
