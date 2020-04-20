@@ -53,4 +53,8 @@ public class FileDownloadFragment extends Fragment {
         });
         return v;
     }
+
+    public void onDownloadClick(View view) {
+        Log.i("FileDownloadFragment","TODO: Download file (broadcast message)");
+    }
 }

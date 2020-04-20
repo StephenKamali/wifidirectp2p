@@ -24,8 +24,9 @@ public class MainSearchActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
-    public void sendMessage(View view) {
-        Log.i(null, "Sending Message");
+    public void goToNetworkView(View view) {
+        Intent intent = new Intent(this, WiFiDirectActivity.class);
+        startActivity(intent);
     }
 
     public void uploadFile(View view) {

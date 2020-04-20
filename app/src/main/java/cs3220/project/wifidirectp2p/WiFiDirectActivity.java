@@ -415,4 +415,9 @@ public class WiFiDirectActivity extends Activity implements ChannelListener, Dev
             }
         }
     }
+
+    public void onViewUserAppClick(View view) {
+        Intent intent = new Intent(this, MainSearchActivity.class);
+        startActivity(intent);
+    }
 }

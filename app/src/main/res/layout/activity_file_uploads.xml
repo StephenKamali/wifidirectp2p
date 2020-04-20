@@ -64,9 +64,22 @@
         app:layout_constraintTop_toBottomOf="@+id/logo"
         app:layout_constraintVertical_bias="0.0" />
 
+    <TextView
+        android:id="@+id/noUploads"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/baloo"
+        android:text="No File Uploads"
+        android:textSize="24sp"
+        app:layout_constraintBottom_toBottomOf="@+id/uploadsList"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/uploadsList" />
+
     <ListView
-        android:layout_width="391dp"
-        android:layout_height="375dp"
+        android:id="@+id/uploadsList"
+        android:layout_width="415dp"
+        android:layout_height="355dp"
         app:layout_constraintBottom_toTopOf="@+id/uploadFile"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

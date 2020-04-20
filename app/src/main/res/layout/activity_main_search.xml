@@ -23,12 +23,12 @@
         app:layout_constraintVertical_bias="0.373" />
 
     <Button
-        android:id="@+id/sendMessage"
+        android:id="@+id/networkView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:fontFamily="@font/baloo"
-        android:onClick="sendMessage"
-        android:text="Send A Message"
+        android:onClick="goToNetworkView"
+        android:text="Go to Network View"
         android:textSize="30sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -44,7 +44,7 @@
         android:onClick="uploadFile"
         android:text="Upload/Share File"
         android:textSize="30sp"
-        app:layout_constraintBottom_toTopOf="@+id/sendMessage"
+        app:layout_constraintBottom_toTopOf="@+id/networkView"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
