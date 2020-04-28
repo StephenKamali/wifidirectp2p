@@ -1,5 +1,7 @@
 package cs3220.project.wifidirectp2p;
 
+import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Fragment;
 import android.app.ProgressDialog;
 import android.content.Context;
@@ -27,7 +29,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Arrays;
+import java.security.PublicKey;
+import java.util.ArrayList;
+
+import hopscotch.communication.CommunicationManager;
 
 /**
  * A fragment that manages a particular peer and allows interaction with device
@@ -39,9 +44,15 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
     private WifiP2pDevice device;
     private WifiP2pInfo info;
     ProgressDialog progressDialog = null;
+    static AlertDialog alertDialog;
+
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+
+        alertDialog = new AlertDialog.Builder(getActivity())
+                .setTitle("Status update")
+                .create();
     }
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -52,6 +63,7 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
                 WifiP2pConfig config = new WifiP2pConfig();
                 config.deviceAddress = device.deviceAddress;
                 config.wps.setup = WpsInfo.PBC;
+
                 if (progressDialog != null && progressDialog.isShowing()) {
                     progressDialog.dismiss();
                 }
@@ -89,11 +101,11 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
         return mContentView;
     }
 
-    private void sendPacket(String packet) {
+    private void sendPacket(byte[] packet) {
         // We have a packet to send. Transfer it to group owner i.e peer using
         // PacketTransferService.
         TextView statusText = (TextView) mContentView.findViewById(R.id.status_text);
-        statusText.setText("Sending: " + packet.length() + " bytes");
+        statusText.setText("Sending: " + packet.length + " bytes");
         //Log.d(WiFiDirectActivity.TAG, "Intent----------- " + uri);
         Intent serviceIntent = new Intent(getActivity(), PacketTransferService.class);
         serviceIntent.setAction(PacketTransferService.ACTION_SEND_PACKET);
@@ -134,7 +146,6 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
                 : getResources().getString(R.string.no)));
         // InetAddress from WifiP2pInfo struct.
         view = (TextView) mContentView.findViewById(R.id.device_info);
-        view.setText("Group Owner IP - " + info.groupOwnerAddress.getHostAddress());
         // After the group negotiation, we assign the group owner as the file
         // server. The file server is single threaded, single connection server
         // socket.
@@ -143,36 +154,12 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
              //       .execute();
             new PacketAsyncTask(getActivity(), mContentView.findViewById(R.id.status_text))
                    .execute();
-            /*Thread thread = new Thread(new Runnable(){
-                @Override
-                public void run() {
-                    try {
-                        try {
-                            ServerSocket serverSocket = new ServerSocket(8988);
-                            Log.d(WiFiDirectActivity.TAG, "Server: Socket opened");
-                            Socket client = serverSocket.accept();
-                            Log.d(WiFiDirectActivity.TAG, "Server: connection done");
-                            InputStream inputstream = client.getInputStream();
-
-                            byte[] packet = receivePacket(inputstream);
-                            Log.d("HSCOTCH", "Packet contents: " + Arrays.toString(packet));
-
-                            serverSocket.close();
-                        } catch (IOException e) {
-                            Log.e(WiFiDirectActivity.TAG, e.getMessage());
-                        }
-                    } catch (Exception e) {
-                        Log.e("HSCOTCH", e.getMessage());
-                    }
-                }
-            });
-            thread.start();
-             */
         } else if (info.groupFormed) {
             // The other device acts as the client. In this case, we enable the
             // get file button.
 
-            sendPacket("HOWDY WORLD. THIS IS A TEST PACKET.");
+            //sendPacket("HOWDY WORLD. THIS IS A TEST PACKET.");
+            sendPacket(((WiFiDirectActivity)getActivity()).outPacket);
 
             //mContentView.findViewById(R.id.btn_start_client).setVisibility(View.VISIBLE);
             //((TextView) mContentView.findViewById(R.id.status_text)).setText(getResources()
@@ -284,31 +271,36 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
      * A simple server socket that accepts connection and writes some data on
      * the stream.
      */
-    public static class PacketAsyncTask extends AsyncTask<Void, Void, String> {
+    public static class PacketAsyncTask extends AsyncTask<Void, Void, byte[]> {
         private Context context;
         private TextView statusText;
+        private Activity mainActivity;
         /**
          * @param context
          * @param statusText
          */
-        public PacketAsyncTask(Context context, View statusText) {
-            this.context = context;
+        public PacketAsyncTask(Activity mainActivity, View statusText) {
+            this.context = mainActivity;
             this.statusText = (TextView) statusText;
+            this.mainActivity = mainActivity;
         }
         @Override
-        protected String doInBackground(Void... params) {
+        protected byte[] doInBackground(Void... params) {
             try {
                 ServerSocket serverSocket = new ServerSocket(8988);
                 Log.d(WiFiDirectActivity.TAG, "Server: Socket opened");
                 Socket client = serverSocket.accept();
                 Log.d(WiFiDirectActivity.TAG, "Server: connection done");
+                Log.d("HSCOTCH", "inet address = " + client.getInetAddress().getAddress());
+                Log.d("HSCOTCH", "local address = " + client.getLocalAddress().getAddress());
                 InputStream inputstream = client.getInputStream();
 
                 byte[] packet = receivePacket(inputstream);
                 Log.d("HSCOTCH", "Packet contents: " + new String(packet));
 
                 serverSocket.close();
-                return "finished";
+
+                return packet;
             } catch (IOException e) {
                 Log.e(WiFiDirectActivity.TAG, e.getMessage());
                 return null;
@@ -319,9 +311,56 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
          * @see android.os.AsyncTask#onPostExecute(java.lang.Object)
          */
         @Override
-        protected void onPostExecute(String result) {
+        protected void onPostExecute(byte[] result) {
             if (result != null) {
-                statusText.setText("Packet copied - " + result);
+                statusText.setText("Packet copied - " + new String(result));
+                Log.d("HSCOTCH", "packet copied");
+                ((WiFiDirectActivity)mainActivity).commManager.decodeStream(result, new CommunicationManager.SearchReqCallback() {
+                    @Override
+                    public void onReadyToBroadcast(byte[] outMessage) {
+                        ((WiFiDirectActivity) mainActivity).outPacket = outMessage;
+                        new AlertDialog.Builder(mainActivity)
+                                .setTitle("Status update")
+                                .setMessage("Received a matching search request. \n" +
+                                        "Click BROADCAST to send matching info back to network.")
+                                .create().show();
+                        Log.d("HSCOTCH", "Ready to broadcast ");
+                    }
+                }, new CommunicationManager.SearchRespCallback() {
+                    @Override
+                    public void onResponseReceived(PublicKey key, String fileName, int fileSize) {
+                        ((WiFiDirectActivity) mainActivity).outPacket =
+                                ((WiFiDirectActivity) mainActivity).commManager.genConfirmDownloadStream(key, fileName, fileSize);
+                        new AlertDialog.Builder(mainActivity)
+                                .setTitle("Status update")
+                                .setMessage("Received response: " + fileName + "\n" +
+                                        "Click BROADCAST to send download request.")
+                                .create().show();
+                        Log.d("HSCOTCH", "Received response " + fileName);
+                    }
+                }, new CommunicationManager.NegotiationCallback() {
+                    @Override
+                    public void onDownloadRequest(byte[] outMessage) {
+                        ((WiFiDirectActivity) mainActivity).outPacket = outMessage;
+                        new AlertDialog.Builder(mainActivity)
+                                .setTitle("Status update")
+                                .setMessage("Received a download request.\n" +
+                                        "Press BROADCAST to continue.")
+                                .create().show();
+                        Log.d("HSCOTCH", "Ready to broadcast ");
+                    }
+                }, new CommunicationManager.DownloadCallback() {
+                    @Override
+                    public void onReceiveFile(String theFile) {
+                        ((WiFiDirectActivity) mainActivity).outPacket = null;
+                        new AlertDialog.Builder(mainActivity)
+                                .setTitle("Status update")
+                                .setMessage("Received file: " + theFile + "\n" +
+                                        "Transaction finished, key destroyed.")
+                                .create().show();
+                        Log.d("HSCOTCH", "Ready to broadcast ");
+                    }
+                });
             }
         }
         /*
@@ -352,6 +391,7 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
 
     // This is a really simple way to receive the info, and store it in a small buffer
     public static byte[] receivePacket(InputStream inputStream) {
+        /*
         byte buf[] = new byte[1024];
         int len;
         try {
@@ -360,7 +400,26 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
             inputStream.close();
         } catch (IOException e) {
             Log.d(WiFiDirectActivity.TAG, e.toString());
+        }*/
+
+        byte buf[] = new byte[1024];
+        int len;
+        ArrayList<Byte> out = new ArrayList<>();
+        try {
+            while ((len = inputStream.read(buf)) != -1) {
+                //out.write(buf, 0, len);
+                for (int i = 0; i < len; i++) {
+                    out.add(buf[i]);
+                }
+            }
+            inputStream.close();
+        } catch (IOException e) {
+            Log.d(WiFiDirectActivity.TAG, e.toString());
         }
-        return buf;
+        byte[] outArray = new byte[out.size()];
+        for (int i = 0; i < out.size(); i++) {
+            outArray[i] = out.get(i);
+        }
+        return outArray;
     }
 }

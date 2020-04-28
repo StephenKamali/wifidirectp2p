@@ -2,7 +2,6 @@ package cs3220.project.wifidirectp2p;
 
 import android.Manifest;
 import android.app.Activity;
-import android.bluetooth.BluetoothClass;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -29,6 +28,8 @@ import android.widget.Toast;
 
 import java.util.ArrayList;
 
+import hopscotch.communication.CommunicationManager;
+
 /**
  * An activity that uses WiFi Direct APIs to discover and connect with available
  * devices. WiFi Direct APIs are asynchronous and rely on callback mechanism
@@ -52,6 +53,9 @@ public class WiFiDirectActivity extends Activity implements ChannelListener, Dev
     private Button connectToNetworkButton;
     private Button refreshPeersButton;
     private Button broadcastButton;
+
+    public CommunicationManager commManager;
+    public byte[] outPacket;
 
     /**
      * @param isWifiP2pEnabled the isWifiP2pEnabled to set
@@ -132,6 +136,8 @@ public class WiFiDirectActivity extends Activity implements ChannelListener, Dev
                 broadcastToPeers();
             }
         });
+
+        commManager = new CommunicationManager();
     }
     /** register the BroadcastReceiver with the intent values to be matched */
     @Override
@@ -310,6 +316,8 @@ public class WiFiDirectActivity extends Activity implements ChannelListener, Dev
                     .findFragmentById(R.id.frag_list);
             unbroadcastedPeers.addAll(fragment.getPeers());
 
+            if (outPacket == null)
+                outPacket = commManager.genSearchStream("BLOOPERS FROM THE MOVIE UP");
 
             Log.d("HSCOTCH", "Leaving current group to broadcast");
             //cancelDisconnect();

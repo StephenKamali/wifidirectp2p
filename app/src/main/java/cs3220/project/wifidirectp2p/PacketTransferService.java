@@ -37,7 +37,7 @@ public class PacketTransferService extends IntentService {
     protected void onHandleIntent(Intent intent) {
         Context context = getApplicationContext();
         if (intent.getAction().equals(ACTION_SEND_PACKET)) {
-            String contents = intent.getExtras().getString(EXTRAS_PACKET_DATA);
+            byte[] contents = intent.getExtras().getByteArray(EXTRAS_PACKET_DATA);
             String host = intent.getExtras().getString(EXTRAS_GROUP_OWNER_ADDRESS);
             Socket socket = new Socket();
             int port = intent.getExtras().getInt(EXTRAS_GROUP_OWNER_PORT);
@@ -48,7 +48,7 @@ public class PacketTransferService extends IntentService {
                 Log.d(WiFiDirectActivity.TAG, "Client socket - " + socket.isConnected());
                 OutputStream stream = socket.getOutputStream();
 
-                stream.write(contents.getBytes());
+                stream.write(contents);
                 stream.close();
 
                 Log.d(WiFiDirectActivity.TAG, "Client: Data written");

@@ -9,6 +9,8 @@ import hopscotch.encryption.EncryptionManager;
 import hopscotch.encryption.DataEncryptor;
 import hopscotch.messages.*;
 
+import static hopscotch.encryption.DataEncryptor.convertBytesToString;
+
 public class CommunicationManager {
 
     private EncryptionManager encryptionManager;
@@ -66,11 +68,11 @@ public class CommunicationManager {
         confirmPacket.appendPayload(fileNamePayload);
 
         //file size payload: RSA encrypted, AES negotiation, encrypted(fileSize)
-        Payload fileSizePayload = new Payload();
+        /*Payload fileSizePayload = new Payload();
         fileSizePayload.encryption = PayloadEncryption.RSA_ENCRYPTED;
         fileSizePayload.type = PayloadType.AES_NEGOTIATION;
         fileNamePayload.content = DataEncryptor.encryptRSAMessage(toWho, Serializer.serialize(fileSize));
-        confirmPacket.appendPayload(fileSizePayload);
+        confirmPacket.appendPayload(fileSizePayload);*/
 
         //generate AES key for the download
         SecretKey ourKey = encryptionManager.genAESTransaction(toWho);
@@ -100,11 +102,11 @@ public class CommunicationManager {
         searchRPacket.appendPayload(fileNamePayload);
 
         //file size payload: RSA encrypted, search response, encrypted(fileSize)
-        Payload fileSizePayload = new Payload();
+        /*Payload fileSizePayload = new Payload();
         fileSizePayload.encryption = PayloadEncryption.RSA_ENCRYPTED;
         fileSizePayload.type = PayloadType.SEARCH_RESPONSE;
         fileNamePayload.content = DataEncryptor.encryptRSAMessage(toWho, Serializer.serialize(fileSize));
-        searchRPacket.appendPayload(fileSizePayload);
+        searchRPacket.appendPayload(fileSizePayload);*/
 
         return Serializer.serialize(searchRPacket);
     }
@@ -126,12 +128,15 @@ public class CommunicationManager {
 
     //Incoming messages ---------------------------------------------------------
 
-    public void decodeStream(byte[] receivedByteStream) {
+    public void decodeStream(byte[] receivedByteStream, SearchReqCallback searchReqCallback,
+                             SearchRespCallback searchRespCallback, NegotiationCallback negotiationCallback,
+                             DownloadCallback downloadCallback) {
         Packet incomingPacket = Serializer.deserialize(receivedByteStream);
         PublicKey receivedFrom = incomingPacket.getSender();
         ArrayList<Payload> data = incomingPacket.getPayloads();
         Payload firstPayload = data.get(0);
-        if (firstPayload.type == PayloadType.SEARCH_REQUEST || encryptionManager.currentlyTalkingTo(receivedFrom)) {
+        if (firstPayload.type == PayloadType.SEARCH_REQUEST || firstPayload.type == PayloadType.SEARCH_RESPONSE
+                || encryptionManager.currentlyTalkingTo(receivedFrom)) {
             byte[] outMessage;
             switch (firstPayload.type) {
                 //Responder gets first touch from requester's search.
@@ -144,25 +149,33 @@ public class CommunicationManager {
                     int matchedSize = 50; //byte size of the matched file
                     outMessage = genSearchResponseStream(receivedFrom, matchedName, matchedSize);
                     //INSERT NETWORKING LOGIC TO PROPEL THE OUT MESSAGE TO ALL NEARBY PEERS.
+                    searchReqCallback.onReadyToBroadcast(outMessage);
                     break;
                 //Requester receives search response from a Responder.
                 case SEARCH_RESPONSE:
                     encryptionManager.requestFinishSetup(receivedFrom);
-                    String theirResponse = Serializer.deserialize(DataEncryptor.decryptRSAMessage(encryptionManager.getMyPrivateRSAKey(receivedFrom), firstPayload.content));
-                    int responseSize = Serializer.deserialize(DataEncryptor.decryptRSAMessage(encryptionManager.getMyPrivateRSAKey(receivedFrom), data.get(1).content));
+                    String theirResponse = "" + Serializer.deserialize(DataEncryptor.decryptRSAMessage(encryptionManager.getMyPrivateRSAKey(receivedFrom), firstPayload.content));
+
+                    //System.out.println("HSCOTCH data size = " + data.size() + ", data(0).content size = " + firstPayload.content.length);
+
+                    //int responseSize = Serializer.deserialize(DataEncryptor.decryptRSAMessage(encryptionManager.getMyPrivateRSAKey(receivedFrom), data.get(1).content));
                     //APPEND (receivedFrom, theirResponse, responseSize) INTO A GLOBAL LIST OF FILES TO CHOOSE FROM.
+                    searchRespCallback.onResponseReceived(receivedFrom ,theirResponse, 50);
                     break;
                 //Responder receives AES negotiation / download confirmation from Requester.
                 case AES_NEGOTIATION:
+                    System.out.println("HSCOTCH - AES NEGOTIATION");
                     boolean download = Serializer.deserialize(DataEncryptor.decryptRSAMessage(encryptionManager.getMyPrivateRSAKey(receivedFrom), firstPayload.content));
-                    String fileTheyWant = Serializer.deserialize(DataEncryptor.decryptRSAMessage(encryptionManager.getMyPrivateRSAKey(receivedFrom), data.get(1).content));
-                    int fileSize = Serializer.deserialize(DataEncryptor.decryptRSAMessage(encryptionManager.getMyPrivateRSAKey(receivedFrom), data.get(2).content));
-                    SecretKey ourSharedKey = Serializer.deserialize(DataEncryptor.decryptRSAMessage(encryptionManager.getMyPrivateRSAKey(receivedFrom), data.get(3).content));
+                    String fileTheyWant = "" + Serializer.deserialize(DataEncryptor.decryptRSAMessage(encryptionManager.getMyPrivateRSAKey(receivedFrom), data.get(1).content));
+                    System.out.println("HSCOTCH - File they want  = " + fileTheyWant);
+                    //int fileSize = Serializer.deserialize(DataEncryptor.decryptRSAMessage(encryptionManager.getMyPrivateRSAKey(receivedFrom), data.get(2).content));
+                    SecretKey ourSharedKey = Serializer.deserialize(DataEncryptor.decryptRSAMessage(encryptionManager.getMyPrivateRSAKey(receivedFrom), data.get(2).content));
                     encryptionManager.setOurSharedAESKey(receivedFrom, ourSharedKey);
                     if (download) {
                         //FIND THE FILE THEY WANT WITH THE MATCHING FILE NAME AND SIZE
                         String matchedFile = "Pretend this is a file.";
                         outMessage = genFileTransferStream(receivedFrom, Serializer.serialize(matchedFile));
+                        negotiationCallback.onDownloadRequest(outMessage);
                         //INSERT NETWORKING LOGIC TO PROPEL THE OUT MESSAGE TO ALL NEARBY PEERS.
                     } else {
                         //They don't want to download the file-- kill the whole transaction.
@@ -174,8 +187,28 @@ public class CommunicationManager {
                 case DOWNLOAD_CHUNK:
                     String theFile = Serializer.deserialize(DataEncryptor.decryptAESMessage(encryptionManager.getOurSharedAESKey(receivedFrom), data.get(0).content));
                     encryptionManager.destroyKeyBundle(receivedFrom);
+                    downloadCallback.onReceiveFile(theFile);
                     break;
+                default:
+                    throw new Error("REACHED DEFAULT MESSAGE CASE. WHAT IS THIS!");
             }
         }
     }
+
+    public interface SearchReqCallback {
+        public void onReadyToBroadcast(byte[] outMessage);
+    }
+
+    public interface SearchRespCallback {
+        public void onResponseReceived(PublicKey key, String fileName, int fileSize);
+    }
+
+    public interface NegotiationCallback {
+        public void onDownloadRequest(byte[] outMessage);
+    }
+
+    public interface DownloadCallback {
+        public void onReceiveFile(String theFile);
+    }
 }
+
